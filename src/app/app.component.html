@@ -1,24 +1,27 @@
 <section class="todoapp">
 	<header class="header">
-    <h1>todos</h1>
-    <label>{{newTodoText}}</label>
+		<h1>todos</h1>
+		<label>{{newTodoText}}</label>
 		<input class="new-todo" autofocus="" #newTodo (keyup.enter)="addTodo(newTodo.value.trim())" (keyup.escape)="newTodo.value = ''">
 	</header>
-	<section class="main" *ngIf="todoStore.todos.length > 0">
-		<input id="toggle-all" class="toggle-all" type="checkbox" *ngIf="todoStore.todos.length" #toggleall [checked]="todoStore.allCompleted()" (click)="todoStore.setAllTo(toggleall.checked)">
+	<section class="main" *ngIf="todoStore.todos">
+		<input id="toggle-all" class="toggle-all" type="checkbox" *ngIf="todoStore.todos.length" #toggleall [checked]="todoStore.allCompleted()"
+		 (click)="todoStore.setAllTo(toggleall.checked)">
 		<ul class="todo-list">
-			<li *ngFor="let todo of todoStore.todos" [class.completed]="todo.completed" [class.editing]="todo.editing">
+			<li *ngFor="let todo of todoStore.todos | async" [class.completed]="todo.completed" [class.editing]="todo.editing">
 				<div class="view">
 					<input class="toggle" type="checkbox" (click)="toggleCompletion(todo)" [checked]="todo.completed">
 					<label (dblclick)="todo.editing = true">{{todo.text}}</label>
 					<button type="button" class="destroy" (click)="remove(todo)"></button>
 				</div>
-				<input class="edit" *ngIf="todo.editing" [value]="todo.text" #editedtodo (keyup.enter)="updateTodo(todo, editedtodo.value)" (keyup.escape)="todo.editing = false; editedtodo.value = todo.value">
+				<input class="edit" *ngIf="todo.editing" [value]="todo.text" #editedtodo (keyup.enter)="updateTodo(todo, editedtodo.value)"
+				 (keyup.escape)="todo.editing = false; editedtodo.value = todo.value">
 			</li>
 		</ul>
 	</section>
 	<footer class="footer" *ngIf="todoStore.todos.length > 0">
-		<span class="todo-count"><strong>{{todoStore.getRemaining().length}}</strong> {{todoStore.getRemaining().length == 1 ? 'item' : 'items'}} left</span>
+		<span class="todo-count">
+			<strong>{{todoStore.getRemaining().length}}</strong> {{todoStore.getRemaining().length == 1 ? 'item' : 'items'}} left</span>
 		<button class="clear-completed" *ngIf="todoStore.getCompleted().length > 0" (click)="removeCompleted()">Clear completed</button>
 	</footer>
 </section>

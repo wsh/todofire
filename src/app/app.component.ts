@@ -1,24 +1,74 @@
 import { Component } from '@angular/core';
+import { Injectable } from '@angular/core';
+
+import { AngularFirestore, AngularFirestoreDocument, AngularFirestoreCollection } from 'angularfire2/firestore';
+
+import { Observable } from 'rxjs/Observable';
+
+@Injectable()
+export class TodoStore {
+  todos: Observable<TodoId[]>;
+  db: AngularFirestore;
+  undone: AngularFirestore
+
+  constructor(db: AngularFirestore) {
+    this.db = db;
+    this.todos = db.collection<Todo>("todos").snapshotChanges().map(snap => {
+      return snap.map(a => {
+        const id = a.payload.doc.id;
+        const todo = a.payload.doc.data() as Todo;
+        return { id, ...todo };
+      });
+    });
+  }
+
+  allCompleted() {
+    return true;
+  }
+
+  getCompleted() {
+    return this.todos.map(v => v.filter(b => b.completed).length);
+  }
+
+  getRemaining() {
+    return this.todos.map(v => v.filter(b => !b.completed).length);
+  }
+
+  addTodo(foo: Todo) {
+    var id = this.db.createId();
+    this.db.collection("todos").doc(id).set({ text: foo.text, completed: false });
+  }
+
+  removeTodo(foo: TodoId) {
+    this.db.collection("todos").doc(foo.id).delete();
+  }
+
+  toggleCompletion(foo: TodoId) {
+    this.db.collection("todos").doc(foo.id).update({ completed: !foo.completed });
+  }
+}
 
 @Component({
   selector: 'app-root',
+  providers: [TodoStore],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
+@Injectable()
 export class AppComponent {
   title = 'app';
   todoStore: TodoStore;
   newTodoText = 'What needs to be done?';
 
-  constructor() {
-    this.todoStore = new TodoStore();
+  constructor(todoStore: TodoStore) {
+    this.todoStore = todoStore;
   }
 
-  editTodo(foo: Todo) {
+  editTodo(foo: TodoId) {
     foo.editing = true;
   }
 
-  updateTodo(foo: Todo, bar: String) {
+  updateTodo(foo: TodoId, bar: String) {
     if (bar.trim().length == 0) {
       this.todoStore.removeTodo(foo);
       return;
@@ -31,36 +81,8 @@ export class AppComponent {
     this.todoStore.addTodo(new Todo(foo));
   }
 
-  toggleCompletion(foo: Todo) {
-    foo.completed = !foo.completed;
-  }
-}
-
-export class TodoStore {
-  todos: Array<Todo>;
-
-  constructor() {
-    this.todos = [new Todo("sample")];
-  }
-
-  allCompleted() {
-    return true;
-  }
-
-  getCompleted() {
-    return this.todos.filter(v => v.completed);
-  }
-
-  getRemaining() {
-    return this.todos.filter(v => !v.completed);
-  }
-
-  addTodo(foo: Todo) {
-    this.todos.push(foo);
-  }
-
-  removeTodo(foo: Todo) {
-    this.todos.splice(this.todos.indexOf(foo), 1);
+  toggleCompletion(foo: TodoId) {
+    this.todoStore.toggleCompletion(foo);
   }
 }
 
@@ -75,3 +97,5 @@ export class Todo {
     this.editing = false;
   }
 }
+
+export class TodoId extends Todo { id: string }
